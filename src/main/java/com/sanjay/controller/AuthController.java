@@ -1,5 +1,8 @@
 package com.sanjay.controller;
 
+import com.sanjay.config.email.EmailPlaceHolders;
+import com.sanjay.config.email.EmailService;
+import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -24,6 +27,10 @@ import com.sanjay.service.CustomUserDetails;
 
 import jakarta.validation.Valid;
 
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -33,13 +40,16 @@ public class AuthController {
 	private JwtTokenProvider jwtTokenProvider;
 	private CustomUserDetails customUserDetails;
 	private CartService cartService;
+	private EmailService emailService;
+
 	
-	public AuthController(UserRepository userRepository,PasswordEncoder passwordEncoder,JwtTokenProvider jwtTokenProvider,CustomUserDetails customUserDetails,CartService cartService) {
+	public AuthController(UserRepository userRepository, EmailService emailService,PasswordEncoder passwordEncoder,JwtTokenProvider jwtTokenProvider,CustomUserDetails customUserDetails,CartService cartService) {
 		this.userRepository=userRepository;
 		this.passwordEncoder=passwordEncoder;
 		this.jwtTokenProvider=jwtTokenProvider;
 		this.customUserDetails=customUserDetails;
 		this.cartService=cartService;
+		this.emailService=emailService;
 	}
 	
 	@PostMapping("/signup")
@@ -78,6 +88,20 @@ public class AuthController {
 	        String token = jwtTokenProvider.generateToken(authentication);
 
 	        AuthResponse authResponse= new AuthResponse(token,true);
+		Map<String, Object> emailVerification = new HashMap<>();
+		emailVerification.put(EmailPlaceHolders.TITLE, "Verify your email");
+		emailVerification.put(EmailPlaceHolders.PRE_HEADER, String.format("We have received your new Signup Request for %s", email));
+		emailVerification.put(EmailPlaceHolders.MESSAGE, "We first need to verify your email. " +
+				"After you have verified your email, we will ask you to send additional information. " +
+				"The details will follow in your next email. Your verification link is:");
+
+		emailVerification.put(EmailPlaceHolders.HYPERLINK_TEXT, "Verification Link");
+		emailVerification.put(EmailPlaceHolders.PARA_TWO, "Please verify your email by clicking the link above.");
+			try{
+				emailService.sendTemplateEmail(email, "test", emailVerification);
+			} catch (MessagingException | UnsupportedEncodingException e){
+				e.printStackTrace();
+			}
 			
 	        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
 		
