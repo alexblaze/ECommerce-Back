@@ -2,6 +2,7 @@ package com.sanjay.controller;
 
 import com.sanjay.config.email.EmailPlaceHolders;
 import com.sanjay.config.email.EmailService;
+import com.sanjay.helper.SignUpEmailHelper;
 import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,11 @@ import com.sanjay.service.CartService;
 import com.sanjay.service.CustomUserDetails;
 
 import jakarta.validation.Valid;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,20 +92,13 @@ public class AuthController {
 	        String token = jwtTokenProvider.generateToken(authentication);
 
 	        AuthResponse authResponse= new AuthResponse(token,true);
-		Map<String, Object> emailVerification = new HashMap<>();
-		emailVerification.put(EmailPlaceHolders.TITLE, "Verify your email");
-		emailVerification.put(EmailPlaceHolders.PRE_HEADER, String.format("We have received your new Signup Request for %s", email));
-		emailVerification.put(EmailPlaceHolders.MESSAGE, "We first need to verify your email. " +
-				"After you have verified your email, we will ask you to send additional information. " +
-				"The details will follow in your next email. Your verification link is:");
+		UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
+			URI uri = uriBuilder.host("http://localhost:3000/")
+					.scheme("http")
+					.path("verify-signup/{i}/{e}")
+					.build(user.getId(),email);
 
-		emailVerification.put(EmailPlaceHolders.HYPERLINK_TEXT, "Verification Link");
-		emailVerification.put(EmailPlaceHolders.PARA_TWO, "Please verify your email by clicking the link above.");
-			try{
-				emailService.sendTemplateEmail(email, "test", emailVerification);
-			} catch (MessagingException | UnsupportedEncodingException e){
-				e.printStackTrace();
-			}
+			new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
 			
 	        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
 		
