@@ -38,6 +38,8 @@ public class User {
 
     @Column(name = "email")
     private String email;
+
+	private String code;
     
     private UserRole role;
     
@@ -66,11 +68,12 @@ public class User {
 		
 	}
 
-	public User(Long id, String firstName, String lastName, String password, String email, UserRole role, String mobile,
+	public User(Long id, String firstName, String lastName, String code, String password, String email, UserRole role, String mobile,
 			List<Address> addresses, List<PaymentInformation> paymentInformation, List<Rating> ratings,
 			List<Review> reviews, LocalDateTime createdAt) {
 		super();
 		this.id = id;
+		this.code=code;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.password = password;
@@ -82,6 +85,14 @@ public class User {
 		this.ratings = ratings;
 		this.reviews = reviews;
 		this.createdAt = createdAt;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
 	}
 
 	public List<Rating> getRatings() {

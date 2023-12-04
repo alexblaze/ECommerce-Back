@@ -5,6 +5,8 @@ import com.sanjay.exception.UserException;
 import com.sanjay.helper.SignUpEmailHelper;
 import com.sanjay.modal.User;
 import com.sanjay.repository.UserRepository;
+import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriBuilder;
@@ -21,7 +23,8 @@ private final UserRepository userRepository;
 private final PasswordEncoder passwordEncoder;
 
 private EmailService emailService;
-
+    private static final String DEAD = "DE4D";
+    private static final String FACE = "FAC3";
 
     public AuthServiceImplementation(UserService userService, EmailService emailService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userService = userService;
@@ -54,14 +57,43 @@ private EmailService emailService;
 
         User savedUser= userService.save(createdUser);
 
-        UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
-        URI uri = uriBuilder.host("http://localhost:3000/")
-                .scheme("http")
-                .path("verify-signup/{i}/{e}")
-                .build(user.getId(),email);
+        createSignupEmailVerification(email,firstName,lastName);
 
-        new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
+
+
+
 
 return "Success";
     }
+
+    URI createSignupEmailVerification(String email, String firstName, String lastname) {
+
+        String referer;
+
+
+        TextEncryptor textEncryptor = Encryptors.text(DEAD, FACE);
+        String code = textEncryptor.encrypt(email);
+
+
+        User user = new User();
+                user.setFirstName(firstName);
+                user.setLastName(lastname);
+                user.setEmail(email);
+
+                user.setCode(code);
+
+
+
+        user = userService.save(user);
+        UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
+
+
+        URI uri = URI.create(String.format("http://localhost:3000/verify-signup/%s/%s/%s",
+                user.getId(), code, email));
+        new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
+
+        return uri;
+    }
+
+
 }
