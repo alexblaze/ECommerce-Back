@@ -3,6 +3,8 @@ package com.sanjay.controller;
 import com.sanjay.config.email.EmailPlaceHolders;
 import com.sanjay.config.email.EmailService;
 import com.sanjay.helper.SignUpEmailHelper;
+import com.sanjay.response.SuccessResponse;
+import com.sanjay.service.AuthService;
 import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,65 +47,73 @@ public class AuthController {
 	private CustomUserDetails customUserDetails;
 	private CartService cartService;
 	private EmailService emailService;
+	private final AuthService authService;
 
 	
-	public AuthController(UserRepository userRepository, EmailService emailService,PasswordEncoder passwordEncoder,JwtTokenProvider jwtTokenProvider,CustomUserDetails customUserDetails,CartService cartService) {
+	public AuthController(UserRepository userRepository, AuthService authService, EmailService emailService,PasswordEncoder passwordEncoder,JwtTokenProvider jwtTokenProvider,CustomUserDetails customUserDetails,CartService cartService) {
 		this.userRepository=userRepository;
 		this.passwordEncoder=passwordEncoder;
 		this.jwtTokenProvider=jwtTokenProvider;
 		this.customUserDetails=customUserDetails;
+		this.authService =authService;
 		this.cartService=cartService;
 		this.emailService=emailService;
 	}
-	
+
 	@PostMapping("/signup")
-	public ResponseEntity<AuthResponse> createUserHandler(@Valid @RequestBody User user) throws UserException{
-		
-		  	String email = user.getEmail();
-	        String password = user.getPassword();
-	        String firstName=user.getFirstName();
-	        String lastName=user.getLastName();
-	        
-	        User isEmailExist=userRepository.findByEmail(email);
-
-	        // Check if user with the given email already exists
-	        if (isEmailExist!=null) {
-	        // System.out.println("--------- exist "+isEmailExist).getEmail());
-	        	
-	            throw new UserException("Email Is Already Used With Another Account");
-	        }
-
-	        // Create new user
-			User createdUser= new User();
-			createdUser.setEmail(email);
-			createdUser.setFirstName(firstName);
-			createdUser.setLastName(lastName);
-	        createdUser.setPassword(passwordEncoder.encode(password));
-	        
-	        
-	        
-	        User savedUser= userRepository.save(createdUser);
-	        
-	        cartService.createCart(savedUser);
-
-	        Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
-	        SecurityContextHolder.getContext().setAuthentication(authentication);
-	        
-	        String token = jwtTokenProvider.generateToken(authentication);
-
-	        AuthResponse authResponse= new AuthResponse(token,true);
-		UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
-			URI uri = uriBuilder.host("http://localhost:3000/")
-					.scheme("http")
-					.path("verify-signup/{i}/{e}")
-					.build(user.getId(),email);
-
-			new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
-			
-	        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
-		
+	public ResponseEntity<?> customerSignup(@RequestBody @Valid User user){
+		String message = authService.signupCustomer(user);
+		return SuccessResponse.configure(message);
 	}
 	
+//	@PostMapping("/signup")
+//	public ResponseEntity<?> createUserHandler(@Valid @RequestBody User user) throws UserException{
+//
+//		  	String email = user.getEmail();
+//	        String password = user.getPassword();
+//	        String firstName=user.getFirstName();
+//	        String lastName=user.getLastName();
+//
+//	        User isEmailExist=userRepository.findByEmail(email);
+//
+//	        // Check if user with the given email already exists
+//	        if (isEmailExist!=null) {
+//	        // System.out.println("--------- exist "+isEmailExist).getEmail());
+//
+//	            throw new UserException("Email Is Already Used With Another Account");
+//	        }
+//
+//	        // Create new user
+//			User createdUser= new User();
+//			createdUser.setEmail(email);
+//			createdUser.setFirstName(firstName);
+//			createdUser.setLastName(lastName);
+//	        createdUser.setPassword(passwordEncoder.encode(password));
+//
+//
+//
+//	        User savedUser= userRepository.save(createdUser);
+//
+//	        cartService.createCart(savedUser);
+//
+//	        Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
+//	        SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//	        String token = jwtTokenProvider.generateToken(authentication);
+//
+//	        AuthResponse authResponse= new AuthResponse(token,true);
+//		UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
+//			URI uri = uriBuilder.host("http://localhost:3000/")
+//					.scheme("http")
+//					.path("verify-signup/{i}/{e}")
+//					.build(user.getId(),email);
+//
+//			new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
+//
+//	        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
+//
+//	}
+//
 	@PostMapping("/signin")
     public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) {
         String username = loginRequest.getEmail();

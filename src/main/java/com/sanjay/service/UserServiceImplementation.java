@@ -23,6 +23,11 @@ public class UserServiceImplementation implements UserService {
 	}
 
 	@Override
+	public User save(User user) {
+		return userRepository.save(user);
+	}
+
+	@Override
 	public User findUserById(Long userId) throws UserException {
 		Optional<User> user=userRepository.findById(userId);
 		
@@ -49,5 +54,6 @@ public class UserServiceImplementation implements UserService {
 		System.out.println("email user"+user.getEmail());
 		return user;
 	}
+
 
 }
