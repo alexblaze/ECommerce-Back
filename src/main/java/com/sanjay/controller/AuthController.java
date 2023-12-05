@@ -2,6 +2,9 @@ package com.sanjay.controller;
 
 import com.sanjay.config.email.EmailPlaceHolders;
 import com.sanjay.config.email.EmailService;
+import com.sanjay.dto.LoginDto;
+import com.sanjay.dto.LoginResponse;
+import com.sanjay.dto.SignUpDto;
 import com.sanjay.helper.SignUpEmailHelper;
 import com.sanjay.response.SuccessResponse;
 import com.sanjay.service.AuthService;
@@ -14,10 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import com.sanjay.config.JwtTokenProvider;
 import com.sanjay.exception.UserException;
@@ -61,8 +62,8 @@ public class AuthController {
 	}
 
 	@PostMapping("/signup")
-	public ResponseEntity<?> customerSignup(@RequestBody @Valid User user){
-		String message = authService.signupCustomer(user);
+	public ResponseEntity<?> customerSignup(@RequestBody @Valid SignUpDto signUpDto){
+		String message = authService.signupCustomer(signUpDto);
 		return SuccessResponse.configure(message);
 	}
 	
@@ -114,23 +115,39 @@ public class AuthController {
 //
 //	}
 //
+
+
+	@PutMapping("verify-signup/{i}/{c}/{e}")
+	public ResponseEntity<?> verifySignUp(@PathVariable int i,@PathVariable String c, @PathVariable String e){
+		String message = authService.verifySignup(i,e,c);
+		return SuccessResponse.configure(message);
+	}
+
+
+//	@PostMapping("/signin")
+//	public ResponseEntity<?> authenticate(@Validated @RequestBody LoginDto loginDto){
+//		LoginResponse authResponse = authService.authenticate(loginDto,false);
+//		return SuccessResponse.configure(authResponse);
+//	}
+
+
 	@PostMapping("/signin")
     public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) {
         String username = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        
-        System.out.println(username +" ----- "+password);
-        
+
+
+
         Authentication authentication = authenticate(username, password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        
+
+
         String token = jwtTokenProvider.generateToken(authentication);
         AuthResponse authResponse= new AuthResponse();
-		
+
 		authResponse.setStatus(true);
 		authResponse.setJwt(token);
-		
+
         return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
     }
 	

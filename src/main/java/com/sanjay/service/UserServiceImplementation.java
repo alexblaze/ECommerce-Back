@@ -22,6 +22,7 @@ public class UserServiceImplementation implements UserService {
 		
 	}
 
+
 	@Override
 	public User save(User user) {
 		return userRepository.save(user);
@@ -56,4 +57,17 @@ public class UserServiceImplementation implements UserService {
 	}
 
 
+	@Override
+	public void deleteByUsername(String email) {
+		if(userRepository.exitsByEmail(email)) {
+			userRepository.deleteByEmail(email);
+		}
+	}
+
+
+	@Override
+	public User getByEmail(String email) {
+		return userRepository.findByEmail(email);
+//				.orElseThrow(()-> new UserException(String.format("Username: %s does not exist", email)));
+	}
 }

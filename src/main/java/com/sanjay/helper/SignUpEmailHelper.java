@@ -2,6 +2,7 @@ package com.sanjay.helper;
 
 import com.sanjay.config.email.EmailPlaceHolders;
 import com.sanjay.config.email.EmailService;
+import com.sanjay.modal.SignupRequest;
 import jakarta.mail.MessagingException;
 
 import java.io.UnsupportedEncodingException;
@@ -27,6 +28,19 @@ public class SignUpEmailHelper {
 
         try {
             emailService.sendTemplateEmail(email, "Signup Request Received", emailVerification);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void emailVerifiedConfirmation(SignupRequest signupRequest) {
+        Map<String, Object> confirmationEmail = new HashMap<>();
+        confirmationEmail.put(EmailPlaceHolders.TITLE, "Account Successfully verified");
+        confirmationEmail.put(EmailPlaceHolders.PRE_HEADER, "You Account has been successfully verified");
+        confirmationEmail.put(EmailPlaceHolders.MESSAGE, String.format("Your email: %s has been successfully verified", signupRequest.getEmail()));
+        try {
+            emailService.sendTemplateEmail(signupRequest.getEmail(), "Account Successfully verified", confirmationEmail);
         } catch (MessagingException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }

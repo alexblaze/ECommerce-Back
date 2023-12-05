@@ -29,6 +29,8 @@ public class User {
 
     @Column(name = "first_name")
     private String firstName;
+
+	private LocalDateTime expiry;
     
     @Column(name = "last_name")
     private String lastName;
@@ -42,6 +44,8 @@ public class User {
 	private String code;
     
     private UserRole role;
+
+	private boolean verified = false;
     
     private String mobile;
 
@@ -90,7 +94,14 @@ public class User {
 	public String getCode() {
 		return code;
 	}
+	public boolean isVerified() {
+		return verified;
+	}
 
+	public User setVerified(boolean verified) {
+		this.verified = verified;
+		return this;
+	}
 	public void setCode(String code) {
 		this.code = code;
 	}
@@ -190,5 +201,12 @@ public class User {
 	public void setPaymentInformation(List<PaymentInformation> paymentInformation) {
 		this.paymentInformation = paymentInformation;
 	}
-    
+	public LocalDateTime getExpiry() {
+		return expiry;
+	}
+
+	public User setExpiry(LocalDateTime expiry) {
+		this.expiry = expiry;
+		return this;
+	}
 }

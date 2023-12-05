@@ -1,10 +1,16 @@
 package com.sanjay.service;
 
 import com.sanjay.config.email.EmailService;
+import com.sanjay.dto.LoginDto;
+import com.sanjay.dto.LoginResponse;
+import com.sanjay.dto.SignUpDto;
 import com.sanjay.exception.UserException;
+import com.sanjay.helper.LocalAssert;
 import com.sanjay.helper.SignUpEmailHelper;
+import com.sanjay.modal.SignupRequest;
 import com.sanjay.modal.User;
 import com.sanjay.repository.UserRepository;
+import com.sanjay.response.AuthResponse;
 import org.springframework.security.crypto.encrypt.Encryptors;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +19,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 
 @Service
 public class AuthServiceImplementation implements AuthService {
@@ -22,24 +29,27 @@ private final UserRepository userRepository;
 
 private final PasswordEncoder passwordEncoder;
 
+private final SignUpRequestService signUpRequestService;
+
 private EmailService emailService;
     private static final String DEAD = "DE4D";
     private static final String FACE = "FAC3";
 
-    public AuthServiceImplementation(UserService userService, EmailService emailService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthServiceImplementation(UserService userService,SignUpRequestService signUpRequestService, EmailService emailService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.emailService =emailService;
+        this.signUpRequestService=signUpRequestService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public String signupCustomer(User user) {
+    public String signupCustomer(SignUpDto signUpDto) {
 
-        String email = user.getEmail();
-        String password = user.getPassword();
-        String firstName=user.getFirstName();
-        String lastName=user.getLastName();
+        String email = signUpDto.getEmail();
+        String password = signUpDto.getPassword();
+        String firstName=signUpDto.getFirstName();
+        String lastName=signUpDto.getLastName();
 
         User isEmailExist=userRepository.findByEmail(email);
 
@@ -54,6 +64,7 @@ private EmailService emailService;
         createdUser.setFirstName(firstName);
         createdUser.setLastName(lastName);
         createdUser.setPassword(passwordEncoder.encode(password));
+        createdUser.setCreatedAt(LocalDateTime.now());
 
         User savedUser= userService.save(createdUser);
 
@@ -68,32 +79,62 @@ return "Success";
 
     URI createSignupEmailVerification(String email, String firstName, String lastname) {
 
-        String referer;
+
 
 
         TextEncryptor textEncryptor = Encryptors.text(DEAD, FACE);
         String code = textEncryptor.encrypt(email);
 
 
-        User user = new User();
-                user.setFirstName(firstName);
-                user.setLastName(lastname);
-                user.setEmail(email);
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setFirstName(firstName);
+        signupRequest.setLastName(lastname);
+        signupRequest.setEmail(email);
 
-                user.setCode(code);
+        signupRequest.setCode(code);
+        signupRequest.setVerified(false);
+        signupRequest.setCreated(LocalDateTime.now());
+        signupRequest.setExpiry(LocalDateTime.now().plusHours(48));
 
 
 
-        user = userService.save(user);
+        signupRequest = signUpRequestService.save(signupRequest);
         UriBuilder uriBuilder = UriComponentsBuilder.newInstance();
 
 
         URI uri = URI.create(String.format("http://localhost:3000/verify-signup/%s/%s/%s",
-                user.getId(), code, email));
+                signupRequest.getId(), code, email));
         new SignUpEmailHelper(emailService).emailRequestVerification(email, uri.toString());
 
         return uri;
     }
 
+
+    @Override
+    public String verifySignup(Integer requestId, String email, String code) {
+SignupRequest signupRequest = signUpRequestService.getBySignupRequestIdAndEmailAndCode(requestId,email,code);
+LocalAssert.isFalse(signupRequest.isVerified(), "Your Email already verified");
+boolean signUpExpired = LocalDateTime.now().isAfter(signupRequest.getExpiry());
+if(signUpExpired){
+    signUpRequestService.delete(signupRequest);
+    userService.deleteByUsername(email);
+    throw new UserException("Verification Link has expired. Please signup again");
+}
+signupRequest.setVerified(true);
+signUpRequestService.save(signupRequest);
+User user = userService.getByEmail(email);
+userService.save(user);
+
+        SignUpEmailHelper signUpEmailHelper = new SignUpEmailHelper(emailService);
+        signUpEmailHelper.emailVerifiedConfirmation(signupRequest);
+        signUpRequestService.delete(signupRequest);
+
+        LoginDto loginDto = new LoginDto();
+        loginDto.setEmail(email);
+        loginDto.setPassword(user.getPassword());
+
+        return "Success";
+
+    }
 
 }
