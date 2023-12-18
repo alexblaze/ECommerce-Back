@@ -5,6 +5,7 @@ import com.sanjay.config.email.EmailService;
 import com.sanjay.helper.SignUpEmailHelper;
 import com.sanjay.response.SuccessResponse;
 import com.sanjay.service.AuthService;
+import com.sanjay.user.domain.UserRole;
 import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.sanjay.config.JwtTokenProvider;
 import com.sanjay.exception.UserException;
@@ -58,6 +56,14 @@ public class AuthController {
 		this.authService =authService;
 		this.cartService=cartService;
 		this.emailService=emailService;
+	}
+
+	@PutMapping("/user-role")
+	public ResponseEntity<?> changeRole(@RequestParam UserRole userRole,
+										@RequestHeader("Authorization") String jwt
+										){
+		String message = authService.changeRole(userRole, jwt);
+		return SuccessResponse.configure(message);
 	}
 
 	@PostMapping("/signup")
@@ -116,20 +122,25 @@ public class AuthController {
 //
 	@PostMapping("/signin")
     public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) {
+
         String username = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        
+		UserDetails userDetails = customUserDetails.loadUserByUsername(username);
         System.out.println(username +" ----- "+password);
         
         Authentication authentication = authenticate(username, password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
+
+		User user =userRepository.findByEmail(username);
+
+
         
         String token = jwtTokenProvider.generateToken(authentication);
         AuthResponse authResponse= new AuthResponse();
 		
 		authResponse.setStatus(true);
 		authResponse.setJwt(token);
+		authResponse.setUserRole(user.getRole());
 		
         return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
     }

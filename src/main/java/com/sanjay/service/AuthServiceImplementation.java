@@ -5,6 +5,7 @@ import com.sanjay.exception.UserException;
 import com.sanjay.helper.SignUpEmailHelper;
 import com.sanjay.modal.User;
 import com.sanjay.repository.UserRepository;
+import com.sanjay.user.domain.UserRole;
 import org.springframework.security.crypto.encrypt.Encryptors;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -53,6 +54,7 @@ private EmailService emailService;
         createdUser.setEmail(email);
         createdUser.setFirstName(firstName);
         createdUser.setLastName(lastName);
+        createdUser.setRole(UserRole.ROLE_USER);
         createdUser.setPassword(passwordEncoder.encode(password));
 
         User savedUser= userService.save(createdUser);
@@ -96,4 +98,16 @@ return "Success";
     }
 
 
+    @Override
+    public String changeRole(UserRole userRole, String jwt) {
+
+       User user = userService.findUserProfileByJwt(jwt);
+
+
+
+
+       user.setRole(userRole);
+       userRepository.save(user);
+        return "Success";
+    }
 }
