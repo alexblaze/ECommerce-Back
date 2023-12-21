@@ -2,6 +2,7 @@ package com.sanjay.controller;
 
 import java.util.List;
 
+import com.sanjay.response.SuccessResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,11 +31,13 @@ public class AdminProductController {
 	}
 	
 	@PostMapping("/")
-	public ResponseEntity<Product> createProductHandler(@RequestBody CreateProductRequest req) throws ProductException{
+	public ResponseEntity<?> createProductHandler(@RequestBody CreateProductRequest req) throws ProductException{
 		
-		Product createdProduct = productService.createProduct(req);
+
 		
-		return new ResponseEntity<Product>(createdProduct,HttpStatus.ACCEPTED);
+
+
+		return SuccessResponse.configure(productService.createProduct(req));
 		
 	}
 	
@@ -51,11 +54,11 @@ public class AdminProductController {
 	}
 	
 	@GetMapping("/all")
-	public ResponseEntity<List<Product>> findAllProduct(){
+	public ResponseEntity<?> findAllProduct(){
 		
-		List<Product> products = productService.getAllProducts();
+
 		
-		return new ResponseEntity<List<Product>>(products,HttpStatus.OK);
+		return SuccessResponse.configure(productService.getAllProducts());
 	}
 	
 	@PutMapping("/{productId}/update")

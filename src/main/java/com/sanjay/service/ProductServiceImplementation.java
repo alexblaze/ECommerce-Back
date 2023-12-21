@@ -156,45 +156,42 @@ public class ProductServiceImplementation implements ProductService {
 
 
 
-	
-	
+
+
 	@Override
-	public Page<Product> getAllProduct(String category, List<String>colors, 
-			List<String> sizes, Integer minPrice, Integer maxPrice, 
-			Integer minDiscount,String sort, String stock, Integer pageNumber, Integer pageSize ) {
+	public Page<Product> getAllProduct(String category, List<String> colors, List<String> sizes,
+									   Integer minPrice, Integer maxPrice, Integer minDiscount,
+									   String sort, String stock, Integer pageNumber, Integer pageSize) {
 
 		Pageable pageable = PageRequest.of(pageNumber, pageSize);
-		
+
+		// Fetch products based on category, price, discount, and sort
 		List<Product> products = productRepository.filterProducts(category, minPrice, maxPrice, minDiscount, sort);
-		
-		
-		if (!colors.isEmpty()) {
+
+		// Apply color filter if colors are provided
+		if (colors != null && !colors.isEmpty()) {
 			products = products.stream()
-			        .filter(p -> colors.stream().anyMatch(c -> c.equalsIgnoreCase(p.getColor())))
-			        .collect(Collectors.toList());
-		
-		
-		} 
-
-		if(stock!=null) {
-
-			if(stock.equals("in_stock")) {
-				products=products.stream().filter(p->p.getQuantity()>0).collect(Collectors.toList());
-			}
-			else if (stock.equals("out_of_stock")) {
-				products=products.stream().filter(p->p.getQuantity()<1).collect(Collectors.toList());				
-			}
-				
-					
+					.filter(p -> colors.stream().anyMatch(c -> c.equalsIgnoreCase(p.getColor())))
+					.collect(Collectors.toList());
 		}
+
+		// Apply stock filter if stock parameter is provided
+		if (stock != null) {
+			if ("in_stock".equalsIgnoreCase(stock)) {
+				products = products.stream().filter(p -> p.getQuantity() > 0).collect(Collectors.toList());
+			} else if ("out_of_stock".equalsIgnoreCase(stock)) {
+				products = products.stream().filter(p -> p.getQuantity() < 1).collect(Collectors.toList());
+			}
+		}
+
+		// Calculate pagination
 		int startIndex = (int) pageable.getOffset();
 		int endIndex = Math.min(startIndex + pageable.getPageSize(), products.size());
 
+		// Create a page with the filtered products
 		List<Product> pageContent = products.subList(startIndex, endIndex);
-		Page<Product> filteredProducts = new PageImpl<>(pageContent, pageable, products.size());
-	    return filteredProducts; // If color list is empty, do nothing and return all products
-		
-		
+		return new PageImpl<>(pageContent, pageable, products.size());
 	}
+
 
 }

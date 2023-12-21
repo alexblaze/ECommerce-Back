@@ -2,6 +2,7 @@ package com.sanjay.controller;
 
 import java.util.List;
 
+import com.sanjay.response.SuccessResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,21 +25,26 @@ public class UserProductController {
 	public UserProductController(ProductService productService) {
 		this.productService=productService;
 	}
-	
-	
-	@GetMapping("/products")
-	public ResponseEntity<Page<Product>> findProductByCategoryHandler(@RequestParam String category,
-			@RequestParam List<String>color,@RequestParam List<String> size,@RequestParam Integer minPrice,
-			@RequestParam Integer maxPrice, @RequestParam Integer minDiscount, @RequestParam String sort, 
-			@RequestParam String stock, @RequestParam Integer pageNumber,@RequestParam Integer pageSize){
 
-		
-		Page<Product> res= productService.getAllProduct(category, color, size, minPrice, maxPrice, minDiscount, sort,stock,pageNumber,pageSize);
-		
-		System.out.println("complete products");
-		return new ResponseEntity<>(res,HttpStatus.ACCEPTED);
-		
+
+	@GetMapping("/products")
+	public ResponseEntity<?> findProductByCategoryHandler(
+			@RequestParam(required = false) String category,
+			@RequestParam(required = false) List<String> color,
+			@RequestParam(required = false) List<String> size,
+			@RequestParam(required = false) Integer minPrice,
+			@RequestParam(required = false) Integer maxPrice,
+			@RequestParam(required = false) Integer minDiscount,
+			@RequestParam(required = false) String sort,
+			@RequestParam(required = false) String stock,
+			@RequestParam Integer pageNumber,
+			@RequestParam Integer pageSize) {
+
+		Page<Product> res = productService.getAllProduct(category, color, size, minPrice, maxPrice, minDiscount, sort, stock, pageNumber, pageSize);
+
+		return SuccessResponse.configure(res);
 	}
+
 	
 
 	
