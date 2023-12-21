@@ -1,5 +1,6 @@
 package com.sanjay.controller;
 
+import com.sanjay.response.SuccessResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +21,13 @@ public class UserController {
 	public UserController(UserService userService) {
 		this.userService=userService;
 	}
-	
-	@GetMapping("/profile")
-	public ResponseEntity<User> getUserProfileHandler(@RequestHeader("Authorization") String jwt) throws UserException{
 
-		System.out.println("/api/users/profile");
-		User user=userService.findUserProfileByJwt(jwt);
-		return new ResponseEntity<User>(user,HttpStatus.ACCEPTED);
+	@GetMapping("/profile")
+	public ResponseEntity<?> getUserProfileHandler(@RequestHeader("Authorization") String jwt) throws UserException{
+
+
+
+		return SuccessResponse.configure(userService.findUserProfileByJwt(jwt));
 	}
 
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.sanjay.response.SuccessResponse;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,19 +49,18 @@ public class UserProductController {
 
 	
 	@GetMapping("/products/id/{productId}")
-	public ResponseEntity<Product> findProductByIdHandler(@PathVariable Long productId) throws ProductException{
+	public ResponseEntity<?> findProductByIdHandler(@PathVariable Long productId) throws ProductException{
 		
-		Product product=productService.findProductById(productId);
+
 		
-		return new ResponseEntity<Product>(product,HttpStatus.ACCEPTED);
+		return SuccessResponse.configure(productService.findProductById(productId));
 	}
 
 	@GetMapping("/products/search")
-	public ResponseEntity<List<Product>> searchProductHandler(@RequestParam String q){
+	public ResponseEntity<?> searchProductHandler(@RequestParam String q){
 		
-		List<Product> products=productService.searchProduct(q);
+
 		
-		return new ResponseEntity<List<Product>>(products,HttpStatus.OK);
-		
+		return SuccessResponse.configure(productService.searchProduct(q));
 	}
 }
